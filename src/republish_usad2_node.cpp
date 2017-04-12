@@ -10,20 +10,35 @@
 #include <sensor_msgs/CameraInfo.h>
 
 #include <boost/format.hpp>
+#include <std_msgs/Bool.h>
+
+bool go;
+bool cambia;
+
+void sync_Callback(const std_msgs::Bool::ConstPtr& msg)
+{
+    if (cambia)
+        go=true;
+}
 
 int main(int argc, char* argv[])
 {
+    go=false;
+    cambia = true;
 
     // init node
     ros::init(argc, argv, "republish_usad2_node");
     ros::NodeHandle nh;
 
+    ros::Subscriber sub = nh.subscribe("/sync", 10, sync_Callback);
+
+    ROS_INFO_STREAM("opening");
+
     rosbag::Bag bag;
     //bag.open("/media/ballardini/storage/datasets/usad2/onedrive-via_innovazione2.bag", rosbag::bagmode::Read);
     //bag.open("/media/ballardini/TOSHIBA EXT/saved/A4-4.bag", rosbag::bagmode::Read);
-    bag.open("/media/ballardini/TOSHIBA EXT/splitted/A4-4_0.bag", rosbag::bagmode::Read);
+    bag.open("/media/ballardini/storage/A4-5_1.bag", rosbag::bagmode::Read);
 
-    ROS_INFO_STREAM("open");
 
     std::vector<std::string> topics;
 
@@ -101,7 +116,7 @@ int main(int argc, char* argv[])
     ////////////////////////////////////////////////////////////////////////////
 
 
-    ros::Rate r(20);        // 10 hz
+    ros::Rate r(2);        // 10 hz
     int published_images=0; // Counter
 
     // SAVING IMAGE PART
@@ -111,6 +126,13 @@ int main(int argc, char* argv[])
 
     for(; ((left_iterator!=view_left.end()) && (right_iterator !=view_right.end())) ; )        
     {
+        while (!go)
+        {
+            ros::spinOnce();
+        }
+        ROS_INFO_STREAM("GO");
+        cambia=false;
+
         ros::Time time_l = img_l->header.stamp;
         ros::Time time_r = img_r->header.stamp;
         ros::Duration diff  = time_l - time_r;
@@ -181,12 +203,12 @@ int main(int argc, char* argv[])
         ROS_DEBUG_STREAM("ci-nse: " << cil.header.stamp.nsec   << "\tR: " << cir.header.stamp.nsec );
 
         image = cv_bridge::toCvShare(img_l, "bgr8")->image;
-        std::string filename = (filename_format_ % published_images).str();
-        cv::imwrite("left/"+filename,image);
+//        std::string filename = (filename_format_ % published_images).str();
+//        cv::imwrite("left/"+filename,image);
 
         image = cv_bridge::toCvShare(img_r, "bgr8")->image;
-        filename = (filename_format_ % published_images).str();
-        cv::imwrite("right/"+filename,image);
+//        filename = (filename_format_ % published_images).str();
+//        cv::imwrite("right/"+filename,image);
 
         cv::namedWindow("image_left");
         cv::imshow("image_left",image);
@@ -194,6 +216,9 @@ int main(int argc, char* argv[])
 
         left_iterator++;
         right_iterator++;
+
+        go=false;
+        cambia=true;
         
         ROS_INFO_STREAM("Image: " << published_images++);
         r.sleep();
