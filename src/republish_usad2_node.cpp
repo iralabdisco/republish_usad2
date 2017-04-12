@@ -20,8 +20,8 @@ int main(int argc, char* argv[])
 
     rosbag::Bag bag;
     //bag.open("/media/ballardini/storage/datasets/usad2/onedrive-via_innovazione2.bag", rosbag::bagmode::Read);
-    bag.open("/media/ballardini/TOSHIBA EXT/saved/A4-4.bag", rosbag::bagmode::Read);
-    //bag.open("/media/ballardini/TOSHIBA EXT/splitted/A4-4_0.bag", rosbag::bagmode::Read);
+    //bag.open("/media/ballardini/TOSHIBA EXT/saved/A4-4.bag", rosbag::bagmode::Read);
+    bag.open("/media/ballardini/TOSHIBA EXT/splitted/A4-4_0.bag", rosbag::bagmode::Read);
 
     ROS_INFO_STREAM("open");
 
@@ -50,6 +50,7 @@ int main(int argc, char* argv[])
 
     sensor_msgs::CameraInfo cil,cir;
 
+    ////////////////////////////////////////////////////////////////////////////
     //RIGHT CAMERA
     cir.width = 1312;
     cir.height  = 541;
@@ -71,6 +72,34 @@ int main(int argc, char* argv[])
     cil.P = {834.752703, 0.000000, 612.806038, 0.000000, 0.000000, 834.752703, 158.305822, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000};
     cil.roi.do_rectify = false;
     cil.header.frame_id = "stereo_rig";
+    ////////////////////////////////////////////////////////////////////////////
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // CALIBRATION FROM calibrationdata-06-04-2017 set 2 and 3
+    //RIGHT CAMERA
+    cir.width = 1312;
+    cir.height  = 541;
+    cir.distortion_model = "plumb_bob";
+    cir.D = {-0.227628, 0.074452, -0.000792, -0.000156, 0.000000};
+    cir.K = {841.942265, 0.000000, 637.938525, 0.000000, 842.485046, 263.755081, 0.000000, 0.000000, 1.000000};
+    cir.R = {0.999967, -0.001377, -0.007973, 0.001402, 0.999994, 0.003161, 0.007969, -0.003172, 0.999963};
+    cir.P = {850.361689, 0.000000, 642.190849, -422.417646, 0.000000, 850.361689, 267.709890, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000};
+    cir.roi.do_rectify = false;
+    cir.header.frame_id = "stereo_rig";
+
+    //LEFT CAMERA
+    cil.width = 1312;
+    cil.height  = 541;
+    cil.distortion_model = "plumb_bob";
+    cil.D = {-0.234140, 0.079746, -0.001740, -0.000558, 0.000000};
+    cil.K = {841.823676, 0.000000, 649.285940, 0.000000, 841.651743, 274.552700, 0.000000, 0.000000, 1.000000};
+    cil.R = {0.999984, 0.001497, 0.005484, -0.001480, 0.999994, -0.003171, -0.005489, 0.003163, 0.999980};
+    cil.P = {850.361689, 0.000000, 642.190849, 0.000000, 0.000000, 850.361689, 267.709890, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000};
+    cil.roi.do_rectify = false;
+    cil.header.frame_id = "stereo_rig";
+    ////////////////////////////////////////////////////////////////////////////
+
 
     ros::Rate r(20);        // 10 hz
     int published_images=0; // Counter
