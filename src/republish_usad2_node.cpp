@@ -12,8 +12,19 @@
 #include <boost/format.hpp>
 #include <std_msgs/Bool.h>
 
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl_ros/point_cloud.h>
+
+#define SAME_TIMESTAMP
+//#define SEND_PCD
+//#define SAVE_IMAGES //not rectified!
+#define ENABLE_SYNC_MODE
+
 bool go;
 bool cambia;
+
+typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
 
 void sync_Callback(const std_msgs::Bool::ConstPtr& msg)
 {
@@ -34,12 +45,15 @@ int main(int argc, char* argv[])
 
     ROS_INFO_STREAM("opening");
 
+
     rosbag::Bag bag;
-    //bag.open("/media/ballardini/storage/datasets/usad2/onedrive-via_innovazione2.bag", rosbag::bagmode::Read);
-    //bag.open("/media/ballardini/TOSHIBA EXT/saved/A4-4.bag", rosbag::bagmode::Read);
     bag.open("/media/ballardini/storage/A4-5_1.bag", rosbag::bagmode::Read);
 
+#ifdef ENABLE_SYNC_MODE
+    ROS_INFO_STREAM("open OK! waiting for sync");
+#else
     ROS_INFO_STREAM("open OK!");
+#endif
 
 
     std::vector<std::string> topics;
@@ -66,31 +80,6 @@ int main(int argc, char* argv[])
     ros::Publisher p_cir = nh.advertise<sensor_msgs::CameraInfo>("/stereo/right/camera_info", 1);
 
     sensor_msgs::CameraInfo cil,cir;
-
-    ////////////////////////////////////////////////////////////////////////////
-    //RIGHT CAMERA
-    cir.width = 1312;
-    cir.height  = 541;
-    cir.distortion_model = "plumb_bob";
-    cir.D = {-0.239563, 0.084455, -0.002111, -0.000161, 0.000000};
-    cir.K = {851.257609, 0.000000, 637.135422, 0.000000, 851.168364, 154.698218, 0.000000, 0.000000, 1.000000};
-    cir.R = {0.999997, -0.001336, 0.002140, 0.001354, 0.999963, -0.008449, -0.002129, 0.008452, 0.999962};
-    cir.P = {834.752703, 0.000000, 612.806038, -190.372340, 0.000000, 834.752703, 158.305822, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000};
-    cir.roi.do_rectify = false;
-    cir.header.frame_id = "stereo_rig";
-
-    //LEFT CAMERA
-    cil.width = 1312;
-    cil.height  = 541;
-    cil.distortion_model = "plumb_bob";
-    cil.D = {-0.251963, 0.096396, -0.002254, -0.001636, 0.000000};
-    cil.K = {853.415831, 0.000000, 641.228450, 0.000000, 852.608357, 167.569232, 0.000000, 0.000000, 1.000000};
-    cil.R = {0.999479, -0.000960, 0.032258, 0.000688, 0.999964, 0.008463, -0.032265, -0.008436, 0.999444};
-    cil.P = {834.752703, 0.000000, 612.806038, 0.000000, 0.000000, 834.752703, 158.305822, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000};
-    cil.roi.do_rectify = false;
-    cil.header.frame_id = "stereo_rig";
-    ////////////////////////////////////////////////////////////////////////////
-
 
     ////////////////////////////////////////////////////////////////////////////
     // CALIBRATION FROM calibrationdata-06-04-2017 set 2 and 3
@@ -122,16 +111,29 @@ int main(int argc, char* argv[])
     int published_images=0; // Counter
 
     // SAVING IMAGE PART
-    cv::Mat image;
+    cv::Mat image_right, image_left;
     boost::format filename_format_;
-    filename_format_.parse(std::string("frame%010i.jpg"));
+    filename_format_.parse(std::string("frame%010i.png"));
 
-    for(; ((left_iterator!=view_left.end()) && (right_iterator !=view_right.end())) ; )        
+    std::vector<int> compression_params;
+    compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+    compression_params.push_back(0);
+
+    boost::format filename_format_pcd_;
+    filename_format_pcd_.parse(std::string("frame%010i.pcd"));
+    boost::shared_ptr<ros::Publisher> pc_pub_;
+    pc_pub_.reset(new ros::Publisher(nh.advertise<PointCloud>("/elas_ros/point_cloud", 1)));
+
+
+    for(; ((left_iterator!=view_left.end()) && (right_iterator !=view_right.end())) ; )
     {
+
+#ifdef ENABLE_SYNC_MODE
         while (!go)
         {
             ros::spinOnce();
         }
+#endif
         ROS_INFO_STREAM("GO");
         cambia=false;
 
@@ -144,9 +146,9 @@ int main(int argc, char* argv[])
         {
             ROS_WARN_STREAM("MISSING PACKAGE! Difference" << diff);
 
-//            ROS_INFO_STREAM(img_l->header.seq << " " << img_r->header.seq);
-//            ROS_INFO_STREAM(img_l->header.stamp.sec << " " << img_r->header.stamp.sec );
-//            ROS_INFO_STREAM(img_l->header.stamp.nsec << " " << img_r->header.stamp.nsec << "\n");
+            //            ROS_INFO_STREAM(img_l->header.seq << " " << img_r->header.seq);
+            //            ROS_INFO_STREAM(img_l->header.stamp.sec << " " << img_r->header.stamp.sec );
+            //            ROS_INFO_STREAM(img_l->header.stamp.nsec << " " << img_r->header.stamp.nsec << "\n");
 
             if (diff > threshold)
             {
@@ -169,7 +171,6 @@ int main(int argc, char* argv[])
             ros::spinOnce();
         }
 
-
         rosbag::MessageInstance &l_image_pointer = *left_iterator;
         rosbag::MessageInstance &r_image_pointer = *right_iterator;
         img_l = l_image_pointer.instantiate<sensor_msgs::Image>();
@@ -179,13 +180,22 @@ int main(int argc, char* argv[])
         ROS_DEBUG_STREAM("L: " << img_l->header.stamp.nsec   << "\tR: " << img_r->header.stamp.nsec );
         ROS_WARN_STREAM("Difference: " << diff);
 
+#ifdef SEND_PCD
+        std::string PCD_folder = "/home/ballardini/Desktop/PCD/A4-5_1.bag/";
+        std::string filename = PCD_folder+(filename_format_pcd_ % published_images).str();
+        PointCloud::Ptr point_cloud(new PointCloud());
+        if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (filename, *point_cloud) == -1) //* load the file
+        {
+            ROS_ERROR_STREAM ("Couldn't read file " << filename << " \n");
+            return (-1);
+        }
+        ROS_INFO_STREAM ("Publishing PCD: " << filename);
+        pc_pub_->publish(point_cloud);
+#endif
 
-        //        ros::Time t;
-        //        t=ros::Time::now();
-        //        img_r->header.stamp = t;
-        //        img_l->header.stamp = t;
-        //        cil.header.stamp = t;
-        //        cir.header.stamp = t;
+#ifdef SAME_TIMESTAMP
+        img_r->header.stamp = img_l->header.stamp;
+#endif
 
         cil.header.stamp.sec    = img_l->header.stamp.sec;
         cil.header.stamp.nsec   = img_l->header.stamp.nsec;
@@ -204,16 +214,17 @@ int main(int argc, char* argv[])
         ROS_DEBUG_STREAM("ci-sec: " << cil.header.stamp.sec    << "\tR: " << cir.header.stamp.sec );
         ROS_DEBUG_STREAM("ci-nse: " << cil.header.stamp.nsec   << "\tR: " << cir.header.stamp.nsec );
 
-        image = cv_bridge::toCvShare(img_l, "bgr8")->image;
-//        std::string filename = (filename_format_ % published_images).str();
-//        cv::imwrite("left/"+filename,image);
+        std::string filename = (filename_format_ % published_images).str();
+        image_left = cv_bridge::toCvShare(img_l, "bgr8")->image;
+        image_right = cv_bridge::toCvShare(img_r, "bgr8")->image;
 
-        image = cv_bridge::toCvShare(img_r, "bgr8")->image;
-//        filename = (filename_format_ % published_images).str();
-//        cv::imwrite("right/"+filename,image);
+#ifdef SAVE_IMAGES
+        cv::imwrite("left/"+filename,image_left,compression_params);
+        cv::imwrite("right/"+filename,image_right,compression_params);
+#endif
 
         cv::namedWindow("image_left");
-        cv::imshow("image_left",image);
+        cv::imshow("image_left",image_left);
         cv::waitKey(1);
 
         left_iterator++;
@@ -223,7 +234,10 @@ int main(int argc, char* argv[])
         cambia=true;
         
         ROS_INFO_STREAM("Image: " << published_images++);
-//        r.sleep();
+
+#ifndef ENABLE_SYNC_MODE
+        r.sleep();
+#endif
         ros::spinOnce();
     }
 
