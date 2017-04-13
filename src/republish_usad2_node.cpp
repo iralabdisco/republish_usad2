@@ -23,8 +23,7 @@
 
 bool go;
 bool cambia;
-
-typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
+published_images
 
 void sync_Callback(const std_msgs::Bool::ConstPtr& msg)
 {
@@ -41,7 +40,7 @@ int main(int argc, char* argv[])
     ros::init(argc, argv, "republish_usad2_node");
     ros::NodeHandle nh;
 
-    ros::Subscriber sub = nh.subscribe("/sync", 10, sync_Callback);
+    ros::Subscriber sub = nh.subscribe("/sync", 1, sync_Callback);
 
     ROS_INFO_STREAM("opening");
 
