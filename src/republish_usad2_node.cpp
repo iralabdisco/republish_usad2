@@ -39,6 +39,8 @@ int main(int argc, char* argv[])
     //bag.open("/media/ballardini/TOSHIBA EXT/saved/A4-4.bag", rosbag::bagmode::Read);
     bag.open("/media/ballardini/storage/A4-5_1.bag", rosbag::bagmode::Read);
 
+    ROS_INFO_STREAM("open OK!");
+
 
     std::vector<std::string> topics;
 
@@ -221,7 +223,7 @@ int main(int argc, char* argv[])
         cambia=true;
         
         ROS_INFO_STREAM("Image: " << published_images++);
-        r.sleep();
+//        r.sleep();
         ros::spinOnce();
     }
 
