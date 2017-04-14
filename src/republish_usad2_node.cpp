@@ -23,7 +23,8 @@
 
 bool go;
 bool cambia;
-published_images
+
+typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
 
 void sync_Callback(const std_msgs::Bool::ConstPtr& msg)
 {
