@@ -18,8 +18,8 @@
 
 //#define SAME_TIMESTAMP
 //#define SEND_PCD
-//#define SAVE_IMAGES //not rectified!
-#define ENABLE_SYNC_MODE
+//#define SAVE_UNRECTIFIED_IMAGES
+//#define ENABLE_SYNC_MODE
 //#define SAVE_TIMESTAMPS
 
 bool go;
@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
         image_left = cv_bridge::toCvShare(img_l, "bgr8")->image;
         image_right = cv_bridge::toCvShare(img_r, "bgr8")->image;
 
-#ifdef SAVE_IMAGES
+#ifdef SAVE_UNRECTIFIED_IMAGES
         cv::imwrite("/home/ballardini/Desktop/UNRECT/left/"+filename,image_left,compression_params);
         cv::imwrite("/home/ballardini/Desktop/UNRECT/right/"+filename,image_right,compression_params);
 #endif
