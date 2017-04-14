@@ -16,10 +16,11 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 
-#define SAME_TIMESTAMP
+//#define SAME_TIMESTAMP
 //#define SEND_PCD
 //#define SAVE_IMAGES //not rectified!
 #define ENABLE_SYNC_MODE
+//#define SAVE_TIMESTAMPS
 
 bool go;
 bool cambia;
@@ -66,11 +67,10 @@ int main(int argc, char* argv[])
 
     sensor_msgs::Image::Ptr img_l,img_r;
 
-    rosbag::MessageInstance &l_it = *left_iterator;
-    rosbag::MessageInstance &r_it = *right_iterator;
-    img_l = l_it.instantiate<sensor_msgs::Image>();
-    img_r = r_it.instantiate<sensor_msgs::Image>();
-
+    //rosbag::MessageInstance &l_it = *left_iterator;
+    //rosbag::MessageInstance &r_it = *right_iterator;
+    //img_l = l_it.instantiate<sensor_msgs::Image>();
+    //img_r = r_it.instantiate<sensor_msgs::Image>();
 
     image_transport::ImageTransport it(nh);
     image_transport::Publisher p_r = it.advertise("/stereo/right/image_raw", 1);
@@ -137,10 +137,16 @@ int main(int argc, char* argv[])
         ROS_INFO_STREAM("GO");
         cambia=false;
 
+        rosbag::MessageInstance &l_image_pointer = *left_iterator;
+        rosbag::MessageInstance &r_image_pointer = *right_iterator;
+        img_l = l_image_pointer.instantiate<sensor_msgs::Image>();
+        img_r = r_image_pointer.instantiate<sensor_msgs::Image>();
+
         ros::Time time_l = img_l->header.stamp;
         ros::Time time_r = img_r->header.stamp;
         ros::Duration diff  = time_l - time_r;
-        ros::Duration threshold = ros::Duration(0.05);
+        //ros::Duration threshold = ros::Duration(0.05);
+        ros::Duration threshold = ros::Duration(0.01); //100 KM/h / 3.6 > 27.7m/s * 0.005 ~ 0.14m
 
         while ((diff > threshold) || (diff < -threshold))
         {
@@ -171,14 +177,24 @@ int main(int argc, char* argv[])
             ros::spinOnce();
         }
 
-        rosbag::MessageInstance &l_image_pointer = *left_iterator;
-        rosbag::MessageInstance &r_image_pointer = *right_iterator;
-        img_l = l_image_pointer.instantiate<sensor_msgs::Image>();
-        img_r = r_image_pointer.instantiate<sensor_msgs::Image>();
         ROS_DEBUG_STREAM("L: " << img_l->header.seq          << "\tR: " << img_r->header.seq);
         ROS_DEBUG_STREAM("L: " << img_l->header.stamp.sec    << "\tR: " << img_r->header.stamp.sec );
         ROS_DEBUG_STREAM("L: " << img_l->header.stamp.nsec   << "\tR: " << img_r->header.stamp.nsec );
         ROS_WARN_STREAM("Difference: " << diff);
+
+#ifdef SAVE_TIMESTAMPS
+        std::ofstream timestamp_left;
+        std::string timestamp_filename_left = "/home/ballardini/Desktop/republish_timestamp_left.txt";
+        timestamp_left.open (timestamp_filename_left, std::ios::app);
+        timestamp_left << img_l->header.seq << ";" << img_l->header.stamp << std::endl;
+        timestamp_left.close();
+
+        std::ofstream timestamp_right;
+        std::string timestamp_filename_right = "/home/ballardini/Desktop/republish_timestamp_right.txt";
+        timestamp_right.open (timestamp_filename_right, std::ios::app);
+        timestamp_right << img_r->header.seq << ";" << img_r->header.stamp << std::endl;
+        timestamp_right.close();
+#endif
 
 #ifdef SEND_PCD
         std::string PCD_folder = "/home/ballardini/Desktop/PCD/A4-5_1.bag/";
@@ -219,8 +235,8 @@ int main(int argc, char* argv[])
         image_right = cv_bridge::toCvShare(img_r, "bgr8")->image;
 
 #ifdef SAVE_IMAGES
-        cv::imwrite("left/"+filename,image_left,compression_params);
-        cv::imwrite("right/"+filename,image_right,compression_params);
+        cv::imwrite("/home/ballardini/Desktop/UNRECT/left/"+filename,image_left,compression_params);
+        cv::imwrite("/home/ballardini/Desktop/UNRECT/right/"+filename,image_right,compression_params);
 #endif
 
         cv::namedWindow("image_left");
@@ -246,58 +262,3 @@ int main(int argc, char* argv[])
     bag.close();
 
 }
-
-
-
-// LEFT.yaml
-//
-// image_width: 1312
-// image_height: 541
-// camera_name: narrow_stereo/left
-// camera_matrix:
-//   rows: 3
-//   cols: 3
-//   data: [853.415831, 0.000000, 641.228450, 0.000000, 852.608357, 167.569232, 0.000000, 0.000000, 1.000000]
-// distortion_model: plumb_bob
-// distortion_coefficients:
-//   rows: 1
-//   cols: 5
-//   data: [-0.251963, 0.096396, -0.002254, -0.001636, 0.000000]
-// rectification_matrix:
-//   rows: 3
-//   cols: 3
-//   data: [0.999479, -0.000960, 0.032258, 0.000688, 0.999964, 0.008463, -0.032265, -0.008436, 0.999444]
-// projection_matrix:
-//   rows: 3
-//   cols: 4
-//   data: [834.752703, 0.000000, 612.806038, 0.000000, 0.000000, 834.752703, 158.305822, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000]
-
-
-
-
-
-
-
-
-// RIGHT.yaml
-//
-// image_width: 1312
-// image_height: 541
-// camera_name: narrow_stereo/right
-// camera_matrix:
-//   rows: 3
-//   cols: 3
-//   data: [851.257609, 0.000000, 637.135422, 0.000000, 851.168364, 154.698218, 0.000000, 0.000000, 1.000000]
-// distortion_model: plumb_bob
-// distortion_coefficients:
-//   rows: 1
-//   cols: 5
-//   data: [-0.239563, 0.084455, -0.002111, -0.000161, 0.000000]
-// rectification_matrix:
-//   rows: 3
-//   cols: 3
-//   data: [0.999997, -0.001336, 0.002140, 0.001354, 0.999963, -0.008449, -0.002129, 0.008452, 0.999962]
-// projection_matrix:
-//   rows: 3
-//   cols: 4
-//   data: [834.752703, 0.000000, 612.806038, -190.372340, 0.000000, 834.752703, 158.305822, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000]
