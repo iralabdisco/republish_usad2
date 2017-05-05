@@ -5,10 +5,12 @@ project(republish_usad2)
 add_definitions(-std=c++11)
 
 add_definitions(-DENABLE_SYNC_MODE)
-#add_definitions(-DSAME_TIMESTAMP)
-#add_definitions(-DSEND_PCD)
+#add_definitions(-DSAME_TIMESTAMP)  //S A M E
+#add_definitions(-DSAVE_TIMESTAMPS) //S A V E
 #add_definitions(-DSAVE_UNRECTIFIED_IMAGES)
-#add_definitions(-DSAVE_TIMESTAMPS)
+#add_definitions(-DSEND_PCD)
+#add_definitions(-DRESAVE_BAG)
+
 
 SET (CMAKE_BUILD_TYPE Debug)
 SET (ROS_BUILD_TYPE Debug)

@@ -16,17 +16,14 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 
-#include <string>
+//#define SAME_TIMESTAMP
+//#define SEND_PCD
+//#define SAVE_UNRECTIFIED_IMAGES
+//#define ENABLE_SYNC_MODE
+//#define SAVE_TIMESTAMPS
 
 bool go;
 bool cambia;
-
-//1st step
-//std::string full_filename_to_read="/media/ballardini/TOSHIBA/saved/A4-5_3.bag";
-//std::string full_filename_to_save="/media/ballardini/TOSHIBA/toreindex/A4-5_3.bag";
-
-//2nd step
-std::string full_filename_to_read="/media/ballardini/TOSHIBA/toreindex/merged.bag";
 
 typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
 
@@ -51,7 +48,7 @@ int main(int argc, char* argv[])
 
 
     rosbag::Bag bag;
-    bag.open(full_filename_to_read, rosbag::bagmode::Read);
+    bag.open("/media/ballardini/storage/A4-5_1.bag", rosbag::bagmode::Read);
 
 #ifdef ENABLE_SYNC_MODE
     ROS_INFO_STREAM("open OK! waiting for sync");
@@ -110,7 +107,7 @@ int main(int argc, char* argv[])
     ////////////////////////////////////////////////////////////////////////////
 
 
-    ros::Rate r(10);        // 10 hz
+    ros::Rate r(2);        // 10 hz
     int published_images=0; // Counter
 
     // SAVING IMAGE PART
@@ -122,18 +119,11 @@ int main(int argc, char* argv[])
     compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
     compression_params.push_back(0);
 
-#ifdef SEND_PCD
     boost::format filename_format_pcd_;
     filename_format_pcd_.parse(std::string("frame%010i.pcd"));
     boost::shared_ptr<ros::Publisher> pc_pub_;
     pc_pub_.reset(new ros::Publisher(nh.advertise<PointCloud>("/elas_ros/point_cloud", 1)));
-#endif
 
-#ifdef RESAVE_BAG
-    rosbag::Bag saving_bag;
-    saving_bag.open(full_filename_to_save, rosbag::bagmode::Write);
-
-#endif
 
     for(; ((left_iterator!=view_left.end()) && (right_iterator !=view_right.end())) ; )
     {
@@ -249,13 +239,6 @@ int main(int argc, char* argv[])
         cv::imwrite("/home/ballardini/Desktop/UNRECT/right/"+filename,image_right,compression_params);
 #endif
 
-#ifdef RESAVE_BAG
-        saving_bag.write("/stereo/right/image_raw", img_r->header.stamp, *img_r);
-        saving_bag.write("/stereo/left/image_raw" , img_r->header.stamp, *img_l);
-        saving_bag.write("/stereo/right/camera_info", img_r->header.stamp, cir);
-        saving_bag.write("/stereo/left/camera_info" , img_r->header.stamp, cil);
-#endif
-
         cv::namedWindow("image_left");
         cv::imshow("image_left",image_left);
         cv::waitKey(1);
@@ -269,16 +252,12 @@ int main(int argc, char* argv[])
         ROS_INFO_STREAM("Image: " << published_images++);
 
 #ifndef ENABLE_SYNC_MODE
-        //r.sleep();
+        r.sleep();
 #endif
         ros::spinOnce();
     }
 
     ROS_INFO_STREAM("the end");
-#ifdef RESAVE_BAG
-    saving_bag.close();
-    ROS_INFO_STREAM("closing bagfile");
-#endif
 
     bag.close();
 
