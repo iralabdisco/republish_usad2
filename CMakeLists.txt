@@ -157,6 +157,9 @@ add_definitions(${PCL_DEFINITIONS})
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME}_node src/republish_usad2_node.cpp)
+add_executable(${PROJECT_NAME}_latlon2xy src/latlon2xy.cpp)
+add_executable(${PROJECT_NAME}_xy2latlon src/xy2latlon.cpp)
+add_executable(${PROJECT_NAME}_undistortImage src/undistort.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -170,6 +173,9 @@ add_executable(${PROJECT_NAME}_node src/republish_usad2_node.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node  ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_latlon2xy  ${catkin_LIBRARIES} ${Boost_LIBRARIES}  pthread)
+target_link_libraries(${PROJECT_NAME}_xy2latlon  ${catkin_LIBRARIES} ${Boost_LIBRARIES}  pthread)
+target_link_libraries(${PROJECT_NAME}_undistortImage  ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 #############
 ## Install ##
