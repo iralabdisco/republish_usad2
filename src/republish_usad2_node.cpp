@@ -26,7 +26,7 @@ bool cambia;
 //std::string full_filename_to_save="/media/ballardini/TOSHIBA/toreindex/A4-5_3.bag";
 
 //2nd step
-std::string full_filename_to_read="/media/ballardini/TOSHIBA/toreindex/merged.bag";
+std::string full_filename_to_read="/home/cattaneod/dataset/merged.bag";
 
 typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
 
@@ -93,7 +93,9 @@ int main(int argc, char* argv[])
     cir.D = {-0.227628, 0.074452, -0.000792, -0.000156, 0.000000};
     cir.K = {841.942265, 0.000000, 637.938525, 0.000000, 842.485046, 263.755081, 0.000000, 0.000000, 1.000000};
     cir.R = {0.999967, -0.001377, -0.007973, 0.001402, 0.999994, 0.003161, 0.007969, -0.003172, 0.999963};
-    cir.P = {850.361689, 0.000000, 642.190849, -422.417646, 0.000000, 850.361689, 267.709890, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000};
+    cir.P = {850.361689, 0.000000, 642.190849, -422.417646,
+             0.000000, 850.361689, 267.709890, 0.000000,
+             0.000000, 0.000000, 1.000000, 0.000000};
     cir.roi.do_rectify = false;
     cir.header.frame_id = "stereo_rig";
 
@@ -256,9 +258,9 @@ int main(int argc, char* argv[])
         saving_bag.write("/stereo/left/camera_info" , img_r->header.stamp, cil);
 #endif
 
-        cv::namedWindow("image_left");
-        cv::imshow("image_left",image_left);
-        cv::waitKey(1);
+        //cv::namedWindow("image_left");
+        //cv::imshow("image_left",image_left);
+        //cv::waitKey(1);
 
         left_iterator++;
         right_iterator++;
