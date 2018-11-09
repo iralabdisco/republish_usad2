@@ -1,3 +1,13 @@
+/*
+ *
+ * Augusto Luis Ballardini, ballardini@disco.unimib.it
+ *
+ * https://github.com/iralabdisco/republish_usad2
+ *
+ *
+ *
+ */
+
 #include <csv.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/core/core.hpp>
